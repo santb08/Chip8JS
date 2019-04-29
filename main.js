@@ -12,7 +12,7 @@ function loadFile(){
         const arrayBuffer = reader.result;
         const bArray = new Uint8Array(arrayBuffer);
         chip.loadProgram(bArray);
-        setInterval(start, 1/60);
+        setInterval(start, 20);
     }
     reader.readAsArrayBuffer(file);
 }

@@ -69,11 +69,8 @@ class Chip {
                     //Decrease StackPointer by 1
                     //Sets PC to Stack at StackPointer
                     case 0x00EE:{
-                        console.log(this.stack);
                         this.stackPointer--;
                         const address = this.stack[this.stackPointer] + 2;
-                        console.log("Stack_pointer ",  this.stackPointer);
-                        console.log("Stack ", this.stack);  
                         this.pc = address;
                         console.log("Jumping to ", this.pc.toString(16));
                         break;
@@ -231,7 +228,7 @@ class Chip {
                     //IF VY > VX: VF = 1 ELSE 0 
                     // VX = VY - VX.
                     case 0x0007: {
-                        this.V[0xF] = this.V[y] > this.V[x] ? 1 : 0;
+                        this.V[0xF] = this.V[x] > this.V[y] ? 0 : 1;
                         this.V[x] = (this.V[y] - this.V[x]) & 0xFF;
                         this.pc += 2;
                         break;
@@ -366,11 +363,12 @@ class Chip {
                             const key = this.keys[i]; 
                             console.log("WAITING KEY", key);
                             if(key == 1) {
-                                this.V[x] = key;
+                                this.V[x] = i;
                                 this.pc += 2;
                                 break;
                             }
                         }
+                        break;  
                     }
 
                     //FX15	
@@ -436,7 +434,7 @@ class Chip {
                     //FX55
                     //Stores V0 to VX in memory starting at address I
                     case 0x0055: {
-                        for (let i = 0; i < x; i++){
+                        for (let i = 0; i <= x; i++){
                             this.memory[this.I + i] = this.V[i];
                         }
                         this.pc += 2;
