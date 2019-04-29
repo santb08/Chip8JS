@@ -13,6 +13,7 @@ Chip8 console has the next keys:
   A | 0 | B | F
   
 Mapped in this emulator as (By now, someday I'll make it editable):
+
   1 | 2 | 3 | 4
   
   Q | W | E | R
