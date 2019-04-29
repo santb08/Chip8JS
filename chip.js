@@ -29,6 +29,7 @@ class Chip {
 
         this.needsRedraw = false;
 
+
         this.loadFontset();
         this.initStack();
     }
@@ -45,7 +46,7 @@ class Chip {
         //Then we add the next ones pair of bytes to it ( | OR Operator )
         const opcode = this.memory[this.pc] << 8 | this.memory[this.pc + 1]
         const hexOpcode = opcode.toString(16);
-        console.log(hexOpcode);
+        console.log("OPCODE:", hexOpcode);
 
         //We have to get it first byte to know the kind of instruction...
         //For example: 0xAD34 & 0xF000 = 0xA000
@@ -53,45 +54,50 @@ class Chip {
 
             //0NNN
             //Jumps to routine at NNN
-            case 0x0000:
+            case 0x0000:{
                 switch (opcode & 0x0FFF){
-                    case 0x00E0:
+                    case 0x00E0:{
                         this.display.forEach((pixel, i) => this.display[i] = 0);
                         this.pc += 2;
                         this.needsRedraw = true;
                         console.log("TODO: Clean screen");
                         break;
+                    }
 
                     //Returns a subroutine
                     //Decrease StackPointer by 1
                     //Sets PC to Stack at StackPointer
-                    case 0x00EE:
+                    case 0x00EE:{
                         console.log(this.stack);
                         this.stackPointer--;
-                        const add_ee = this.stack[this.stackPointer] + 2;
+                        const address = this.stack[this.stackPointer] + 2;
                         console.log("Stack_pointer ",  this.stackPointer);
                         console.log("Stack ", this.stack);  
-                        console.log("Jumping ", add_ee);  
-                        this.pc = add_ee;
-                        console.log("Jumping to ", this.pc);
+                        this.pc = address;
+                        console.log("Jumping to ", this.pc.toString(16));
                         break;
+                    }
                     
                 }
                 break;
+            }
 
             //1NNN
             //Jumps to NNN
             //Sets PC to NNN
-            case 0x1000:
-                const address_1 = opcode & 0x0FFF;
-                this.pc = address_1;
+            case 0x1000: {
+                const address = opcode & 0x0FFF;
+                this.pc = address;
+                console.log("JUMPING TO: ", this.pc.toString(16));
                 break;
+            }
+
 
             //Calls subroutine NNN
             //Increases stack pointer
             //Sets stack top to PC
             //PC is setted to NNN
-            case 0x2000:
+            case 0x2000: {
                 let address = opcode & 0x0FFF;
                 console.log("Stack at: ", this.stackPointer, " setted to ", this.pc);
                 console.log(this.stack);
@@ -99,49 +105,122 @@ class Chip {
                 this.stackPointer++;
                 this.pc = address;
                 break;
+            }
 
             //3XNN
             //Jumps next instruction if VX = NN
-            case 0x3000:
-                const index_3 = ( opcode & 0x0F00 ) >> 8;
-                const nn_3 = opcode & 0x00FF;
-                this.pc += ( this.V[index_3] == nn_3 ? 4 : 2);
+            case 0x3000: {
+                const x = ( opcode & 0x0F00 ) >> 8;
+                const nn = opcode & 0x00FF;
+                this.pc += this.V[x] == nn ? 4 : 2;
                 break;
+            }
+
+            //4XNN
+            //Skips next instruction if VX != NN
+            case 0x4000: {
+                const x = (opcode & 0x0F00) >> 8;
+                const nn = (opcode & 0x00FF);
+                this.pc += this.V[x] != nn ? 4 : 2;
+                break;
+            }
 
             //Case 6XKK
             //Sets V[X] = KK 
-            case 0x6000:
-                const x_6 = (opcode & 0x0F00) >> 8;
-                const k_6 = opcode & 0x00FF;
-                this.V[x_6] = k_6;
+            case 0x6000: {
+                const x = (opcode & 0x0F00) >> 8;
+                const nn = opcode & 0x00FF;
+                this.V[x] = nn;
                 this.pc += 2; //Next instruction
                 console.log("OPCODE 0x6000")
-                console.log("Setting V[", x_6,  "] to ", this.V[x_6])
+                console.log("Setting V[", x,  "] to ", this.V[x])
                 break;
+            }
 
             //Case 7XKK
-            case 0x7000:
-                const x_7 = ( opcode & 0x0F00 ) >> 8;
-                const k_7 = ( opcode & 0x00FF );
-                this.V[x_7] = ( this.V[x_7] + k_7 ) & 0x00FF;
+            case 0x7000: {
+                const x = ( opcode & 0x0F00 ) >> 8;
+                const nn = ( opcode & 0x00FF );
+                this.V[x] = ( this.V[x] + nn ) & 0x00FF;
                 this.pc += 2;
-                console.log("Adding ", k_7, " to V[", x_7, "] = ", this.V[x_7])
+                console.log("Adding ", nn, " to V[", x, "] = ", this.V[x])
                 break;
+            }
+
+            case 0x8000: {
+                const x = (opcode & 0x0F00) >> 8;
+                const y = (opcode & 0x00F0) >> 4;
+                switch (opcode & 0x000F) {
+                    //8XY0
+                    //Sets VX to the value of VY
+                    case 0x0000: {
+                        this.V[x] = this.V[y];
+                        console.log("Setting V[", x, "] to V[", y, "] = ", this.V[y]);               
+                        this.pc += 2;
+                        break;
+                    }
+
+                    //8XY2
+                    //Sets VX to VX AND VY
+                    case 0x0002:{
+                        this.V[x] = this.V[x] & this.V[y];
+                        console.log("Set V[", x, "] to V[",x,"] & V[", y, "] = ", this.V[x]);
+                        this.pc += 2;
+                        break;
+                    }
+                    
+                    //8XY4
+                    //Adds VX to VX. VF is set to 1 when carry applies
+                    case 0x0004:{
+                        console.log("Adding V[", x, "] to V[", y, "] = ", (this.V[x] + this.V[y]) >> 0x00FF, ". Apply carry if needed");
+                        const carryNeeded = this.V[y] > 0xFF - this.V[x];
+                        this.V[0xF] = carryNeeded ? 1 : 0;
+                        this.V[x] = (this.V[x] + this.V[y]) & 0x00FF;
+                        this.pc += 2;
+                        break;
+                    }
+                    
+                    //8XY5
+                    //VY is substracted from VX
+                    //VF is set to 0 when there is a borrow else 1
+                    case 0x0005: {
+                        this.V[0xF] = this.V[x] > this.V[y] ? 1 : 0;
+                        this.V[x] = ( this.V[x] - this.V[y] ) & 0xFF;
+                        console.log("V[", x, "] = ", this.V[x], " = V[", y, "] = ", this.V[y], " = ", this.V[x]);
+                        this.pc += 2;
+                        break;
+                    }
+                }
+                break;
+            }
 
             //Case ANNN: Sets I to NNN
-            case 0xA000:
+            case 0xA000: {
                 this.I = opcode & 0x0FFF;
                 this.pc += 2; //Next inscruction
                 console.log("Set I to", this.I.toString(16));
                 break;
+            }
 
+
+            //CXNN: Set VX to a random number and NN
+            case 0xC000: {
+                const x = ( opcode & 0x0F00 ) >> 8;
+                const nn = ( opcode & 0x00FF );
+                const random = parseInt(Math.random() * 256) & nn;
+                console.log("V[", x, "] has been set to random number:", random);
+                this.V[x] = random;
+                this.pc += 2;
+                break;
+            }
+                
             //DXYN
             //Draw by XDR-ing to the screen
             //Check collision and set V[0xF]
             //Read the image from I
-            case 0xD000:
-                let x_D = this.V[( opcode & 0x0F00 ) >> 8];
-                let y_D = this.V[( opcode & 0x00F0 )>> 4];
+            case 0xD000: {
+                let x = this.V[( opcode & 0x0F00 ) >> 8];
+                let y = this.V[( opcode & 0x00F0 )>> 4];
                 let height = opcode & 0x000F;
                 
                 this.V[0xF] = 0;
@@ -150,13 +229,13 @@ class Chip {
                     for (let _x = 0; _x < 8; _x++){
                         const pixel = line & ( 0x80 >> _x )
                         if( pixel != 0 ){
-                            let totalX = x_D + _x;
-                            let totalY = y_D + _y;
+                            let totalX = x + _x;
+                            let totalY = y + _y;
 
                             totalX = totalX % 64;
                             totalY = totalY % 32;
                             
-                            const index = totalY * 64 + totalX;
+                            const index = (totalY * 64) + totalX;
 
                             if(this.display[index] == 1){
                                 this.V[0xF] = 1;
@@ -167,83 +246,131 @@ class Chip {
                 }
                 this.needsRedraw = true; //Setting flag to redraw
                 this.pc += 2 //Next instruction 
-                console.log("Drawing at V[", (opcode & 0x0F00) >> 8, "] = ", x_D, ", V[", (opcode & 0x00F0) >> 4, "] = ", y_D);
+                console.log("Drawing at V[", (opcode & 0x0F00) >> 8, "] = ", x, ", V[", (opcode & 0x00F0) >> 4, "] = ", y);
                 break;
+            }
 
-            case 0xF000:
+            case 0xE000: {
+                switch (opcode & 0x00FF){
+                    //EX9E
+                    //Skip next instruction if the key VX is pressed
+                    case 0x009E: {
+                        const x = (opcode & 0x0F00) >> 8;
+                        const key = this.V[x];
+                        this.pc += (this.keys[key] == 1) ? 4 : 2;
+                        console.log("Skipping next instruction? ", this.keys[key] == 1);
+                        break;
+                    }
+
+                    //EXA1
+                    //Skip next instruction if the key VX is NOT pressed
+                    case 0x00A1: {
+                        const x = (opcode & 0x0F00) >> 8;
+                        const key = this.V[x];
+                        this.pc += (this.keys[key] == 0) ? 4 : 2;
+                        console.log("Skipping next instruction? ", this.keys[key] == 0);
+                        break;
+                    }
+                }
+                break;
+            }
+
+            case 0xF000: {
+                const x = ( opcode & 0x0F00 ) >> 8;
                 switch (opcode & 0x00FF) {
                     //FX07	
                     //Vx = delay timer.
-                    case 0x0007:
-                        const x_f007 = ( opcode & 0x0F00 ) >> 8;
-                        this.V[x_f007] = this.delayTimer;
+                    case 0x0007: {
+                        this.V[x] = this.delayTimer;
                         this.pc += 2;
+                        console.log("V[", x,"] has been set to", this.delayTimer);
                         break;
+                    }
 
                     //FX15	
                     //Set Delay Timer = VX.
-                    case 0x0015:
-                        const x_f015 = ( opcode & 0x0F00 ) >> 8;
-                        this.delayTimer = this.V[x_f015];
+                    case 0x0015: {
+                        this.delayTimer = this.V[x];
+                        this.pc += 2;
+                        console.log("Set delayTimer to V[", x, "] = ", this.V[x]);
+                        break;
+                    }
+
+                    //FX18
+                    //Sets soundTimer = VX
+                    case 0x0018: {
+                        this.soundTimer = this.V[x];
                         this.pc += 2;
                         break;
+                    }
 
                     //FX29
                     //I = VX * SpriteLenght 
-                    case 0x0029:
-                        const x_f029 = ( opcode & 0x0F00 ) >> 8;
-                        const character = this.V[x_f029]
-                        this.I = 0x050 + character * 5
-                        console.log(`Setting I to character V[${x_f029}] - Offset to ${this.I.toString(16)}`)
+                    case 0x0029: {
+                        const character = this.V[x]
+                        this.I = 0x050 + (character * 5);   
+                        console.log(`Setting I to character V[${x}] - Offset to ${this.I.toString(16)}`)
                         this.pc += 2; 
                         break;
+                    }
 
                     //FX33
                     //Sets V[X] to human format
                     //Hundreds at I
                     //Tens at I + 1
                     //Ones at I + 2
-                    case 0x0033:
-                        const index_f033 = (opcode & 0x0F00) >> 8;
-                        let x_f033 = this.V[index_f033];
+                    case 0x0033: {
+                        let value = this.V[x];
                         //Take the reminder of x / 100. Substract it from x, and divide it for 100 to get one
-                        const hundreds = (x_f033 - (x_f033 % 100)) / 100;
-                        x_f033 -= hundreds * 100;
+                        const hundreds = (value - (value % 100)) / 100;
+                        value -= hundreds * 100;
                         //Same right here
-                        const tens = (x_f033 - (x_f033 % 10)) / 10;
-                        x_f033 -= tens * 10;
+                        const tens = (value - (value % 10)) / 10;
+                        value -= tens * 10;
                         //And here's easier
-                        const ones = x_f033;
+                        const ones = value;
 
                         this.memory[this.I] = hundreds;
                         this.memory[this.I + 1] = tens;
                         this.memory[this.I + 2] = ones;
-                        console.log(`Storing binary coded decimal at V[${index_f033}] as ${hundreds}${tens}${ones}`);
+                        console.log(`Storing binary coded decimal at V[${x}] as ${hundreds}${tens}${ones}`);
 
                         this.pc += 2;
                         break;
-
+                    }
+                    
                     //FX65
                     //Saves memory at I on registers from V0 to VX
-                    case 0x0065:
-                        const index_f065 = ( opcode & 0x0F00 ) >> 8;
-                        for (let i = 0; i <= index_f065; i++){
+                    case 0x0065: {
+                        for (let i = 0; i <= x; i++){
                             this.V[i] = this.memory[this.I + i];
                         }
-                        console.log(`Setting V values from 0 to ${index_f065} to values: ${this.I.toString(16)}`)
-                        this.I += ( index_f065 + 1 );
+                        console.log(`Setting V values from 0 to ${x} to values: ${this.I.toString(16)}`)
+                        this.I += ( x + 1 );
                         this.pc += 2;
                         break;
+                    }
                 }
                 break;
+            }
             
             default:
                 return;
 
         }
-        //Switching with opcode
+
+
+        if(this.soundTimer > 0) this.soundTimer--;
+        if(this.delayTimer > 0) this.delayTimer--;
+
     }
 
+    setKeyBuffer(keyBuffer){
+        this.keys.forEach((key, i) => {
+            this.keys[i] = keyBuffer[i]
+        });
+    }
+    
     loadProgram(data) {
         data.forEach(( instruction, index )=> {
             this.memory[0x200 + index] = instruction;

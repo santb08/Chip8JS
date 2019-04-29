@@ -12,7 +12,7 @@ function loadFile(){
         const arrayBuffer = reader.result;
         const bArray = new Uint8Array(arrayBuffer);
         chip.loadProgram(bArray);
-        setInterval(start, 50);
+        setInterval(start, 1/60);
     }
     reader.readAsArrayBuffer(file);
 }
@@ -52,9 +52,9 @@ function redrawCanvas(){
 function start(){
     if(chip) {
         if(chip.needsRedraw) {
-            console.log("NEEDS REDRAW", chip.needsRedraw);
             redrawCanvas();
         }
+        chip.setKeyBuffer(keyboard.getKeyBuffer());
         chip.run();
         iter++;
         console.log("ITERATION ", iter);
@@ -62,15 +62,36 @@ function start(){
     
 }
 
+
+function addListeners(){
+    const getKey = keyCode => String.fromCharCode(keyCode);
+    document.addEventListener('keydown', event => {
+        keyboard.keyPressed(getKey(event.keyCode));
+    } );
+
+    document.addEventListener('keyup', event => {
+        keyboard.keyReleased(getKey(event.keyCode));
+    } );
+}
+
+function initEmulator(){
+    //Fullscreen canvas
+    redrawCanvas();
+    addListeners();
+}
+
+
+
 //Getting canvas
 const canvas = document.getElementById("canvas");
-//Fullscreen canvas
 fitToContainer(canvas);
+//Useful constants
+const PIXEL_WIDTH = canvas.width / 64;
+const PIXEL_HEIGHT =  canvas.height / 32;
 //Getting context
 const ctx = canvas.getContext('2d');
 //Init chip
 const chip = new Chip();
-//Config constantes
-const PIXEL_WIDTH = canvas.width / 64;
-const PIXEL_HEIGHT =  canvas.height / 32;
-redrawCanvas();
+const keyboard = new Keyboard(chip);
+
+initEmulator()
