@@ -5,6 +5,7 @@ Emulator of an old chip 8 console, developed with Javascript.
 Chip8 console has the next keys:
   
   1 | 2 | 3 | C
+  
   4 | 5 | 6 | D
   7 | 8 | 9 | E
   A | 0 | B | F
