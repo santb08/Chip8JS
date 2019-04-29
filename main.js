@@ -31,13 +31,19 @@ function fitToContainer(canvas){
  * Get the display from the chip and loops it to check the pixels and paint it.
  */
 function redrawCanvas(){
+    /**
+     * Draws a pixel filling a lil rect of size of canvas in relation with console display size at {x, y}
+     * @param coor 
+     * @param color 
+     */
     const drawPixel = (coor, color) => {
         const { x, y } = coor;
+        ctx
         ctx.fillStyle = color;
         ctx.fillRect(x * PIXEL_WIDTH, y * PIXEL_HEIGHT, PIXEL_WIDTH, PIXEL_HEIGHT);
     }
+
     const { display } = chip;
-    console.log(display);
     display.forEach( (pixel, index) => {
         const coor = {
             x: index % 64,
@@ -46,7 +52,7 @@ function redrawCanvas(){
         drawPixel(coor, ( pixel == 1 ) ? "green" : "black");
     })
 
-    chip.needsRedraw = false;
+    chip.removeDrawFlag();
 }
 
 function start(){

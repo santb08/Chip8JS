@@ -365,12 +365,27 @@ class Chip {
 
     }
 
+    /**
+     * Removes draw flag from the chip when this doesn't need to be redraw.
+     */
+    removeDrawFlag(){
+        this.needsRedraw = false;
+    }
+
+    /**
+     * Set the console keys to the player's keyboard mapped
+     * @param keyBuffer 
+     */
     setKeyBuffer(keyBuffer){
         this.keys.forEach((key, i) => {
             this.keys[i] = keyBuffer[i]
         });
     }
     
+    /**
+     * Saves the instructions from the file into the console memory since 0x200.
+     * @param data 
+     */
     loadProgram(data) {
         data.forEach(( instruction, index )=> {
             this.memory[0x200 + index] = instruction;
