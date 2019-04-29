@@ -29,7 +29,8 @@ class Chip {
 
         this.needsRedraw = false;
 
-
+                
+        this.audio = new Audio('beep.wav');
         this.loadFontset();
         this.initStack();
     }
@@ -125,6 +126,15 @@ class Chip {
                 break;
             }
 
+            //5XY0
+            //Skips the next instruction if VX equals VY
+            case 0x5000: {
+                const x = ( opcode & 0x0F00 ) >> 8;
+                const y = ( opcode & 0x00F0 ) >> 4;
+                this.pc += this.V[x] == this.V[y] ? 4 : 2;
+                break;
+            }
+
             //Case 6XKK
             //Sets V[X] = KK 
             case 0x6000: {
@@ -160,6 +170,14 @@ class Chip {
                         break;
                     }
 
+                    //8XY1
+                    //VX = VX OR VY
+                    case 0x0001: {
+                        this.V[x] = (this.V[x] | this.V[y]) & 0xFF;
+                        this.pc += 2;
+                        break;
+                    }
+
                     //8XY2
                     //Sets VX to VX AND VY
                     case 0x0002:{
@@ -169,6 +187,14 @@ class Chip {
                         break;
                     }
                     
+                    //8XY1
+                    //VX = VX XOR VY
+                    case 0x0003: {
+                        this.V[x] = (this.V[x] ^ this.V[y]) & 0xFF;
+                        this.pc += 2;
+                        break;
+                    }
+
                     //8XY4
                     //Adds VX to VX. VF is set to 1 when carry applies
                     case 0x0004:{
@@ -190,7 +216,47 @@ class Chip {
                         this.pc += 2;
                         break;
                     }
+
+                    //8XY6
+                    //Shifts VX right by one. VF is set to the least significant bit of VX
+                    //La verdad, esto no lo entendí muy bien y busqué una referencia:(
+                    case 0x0006: {
+                        this.V[0xF] = this.V[x] & 0x1; 
+                        this.V[x] = this.V[x] >> 1;
+                        this.pc += 2;
+                        break;
+                    }
+
+                    //8XY7
+                    //IF VY > VX: VF = 1 ELSE 0 
+                    // VX = VY - VX.
+                    case 0x0007: {
+                        this.V[0xF] = this.V[y] > this.V[x] ? 1 : 0;
+                        this.V[x] = (this.V[y] - this.V[x]) & 0xFF;
+                        this.pc += 2;
+                        break;
+                    }
+
+                    //8XYE
+                    //Shifts VX left by one. 
+                    //VF is set to the value of the most significant bit of VX before the shift.
+                    case 0x000E: {
+                        this.V[0xF] = this.V[x]  & 0x80; 
+                        this.V[x] = this.V[x] << 1;
+                        this.pc += 2;
+                        break;
+                    }
                 }
+                break;
+            }
+
+
+            //5XY0
+            //Skips the next instruction if VX doesn't equal VY
+            case 0x9000: {
+                const x = ( opcode & 0x0F00 ) >> 8;
+                const y = ( opcode & 0x00F0 ) >> 4;
+                this.pc += this.V[x] != this.V[y] ? 4 : 2;
                 break;
             }
 
@@ -201,7 +267,14 @@ class Chip {
                 console.log("Set I to", this.I.toString(16));
                 break;
             }
-
+            
+            //BNNN
+            //Jumps to V[0] + NNN
+            case 0xB000: {
+                const nnn = opcode & 0x0FFF;
+                this.pc = (this.V[0] & 0xFF) + nnn;
+                break;
+            }
 
             //CXNN: Set VX to a random number and NN
             case 0xC000: {
@@ -231,7 +304,7 @@ class Chip {
                         if( pixel != 0 ){
                             let totalX = x + _x;
                             let totalY = y + _y;
-
+                            
                             totalX = totalX % 64;
                             totalY = totalY % 32;
                             
@@ -251,12 +324,13 @@ class Chip {
             }
 
             case 0xE000: {
+                const x = (opcode & 0x0F00) >> 8;
+                const key = this.V[x];
+                console.log("WAITING KEY", key);
                 switch (opcode & 0x00FF){
                     //EX9E
                     //Skip next instruction if the key VX is pressed
                     case 0x009E: {
-                        const x = (opcode & 0x0F00) >> 8;
-                        const key = this.V[x];
                         this.pc += (this.keys[key] == 1) ? 4 : 2;
                         console.log("Skipping next instruction? ", this.keys[key] == 1);
                         break;
@@ -265,8 +339,6 @@ class Chip {
                     //EXA1
                     //Skip next instruction if the key VX is NOT pressed
                     case 0x00A1: {
-                        const x = (opcode & 0x0F00) >> 8;
-                        const key = this.V[x];
                         this.pc += (this.keys[key] == 0) ? 4 : 2;
                         console.log("Skipping next instruction? ", this.keys[key] == 0);
                         break;
@@ -287,6 +359,20 @@ class Chip {
                         break;
                     }
 
+                    //FX0A
+                    //A key pressed is awaited and then stored in VX
+                    case 0x000A: {
+                        for (let i = 0; i < this.keys.length; i++){
+                            const key = this.keys[i]; 
+                            console.log("WAITING KEY", key);
+                            if(key == 1) {
+                                this.V[x] = key;
+                                this.pc += 2;
+                                break;
+                            }
+                        }
+                    }
+
                     //FX15	
                     //Set Delay Timer = VX.
                     case 0x0015: {
@@ -300,6 +386,14 @@ class Chip {
                     //Sets soundTimer = VX
                     case 0x0018: {
                         this.soundTimer = this.V[x];
+                        this.pc += 2;
+                        break;
+                    }
+                    
+                    //FX1E
+                    //I = VX + I
+                    case 0x001E: {
+                        this.I += this.V[x];
                         this.pc += 2;
                         break;
                     }
@@ -338,9 +432,19 @@ class Chip {
                         this.pc += 2;
                         break;
                     }
+
+                    //FX55
+                    //Stores V0 to VX in memory starting at address I
+                    case 0x0055: {
+                        for (let i = 0; i < x; i++){
+                            this.memory[this.I + i] = this.V[i];
+                        }
+                        this.pc += 2;
+                        break;
+                    }
                     
                     //FX65
-                    //Saves memory at I on registers from V0 to VX
+                    //Saves memory at I on registers from V0 to VX 
                     case 0x0065: {
                         for (let i = 0; i <= x; i++){
                             this.V[i] = this.memory[this.I + i];
@@ -360,7 +464,11 @@ class Chip {
         }
 
 
-        if(this.soundTimer > 0) this.soundTimer--;
+        if(this.soundTimer > 0) {
+            this.audio.play();        
+            this.soundTimer--;
+        }
+
         if(this.delayTimer > 0) this.delayTimer--;
 
     }

@@ -62,8 +62,6 @@ function start(){
         }
         chip.setKeyBuffer(keyboard.getKeyBuffer());
         chip.run();
-        iter++;
-        console.log("ITERATION ", iter);
     }
     
 }
