@@ -145,6 +145,7 @@ class Chip {
             }
 
             //Case 7XKK
+            //Adds NN to VX
             case 0x7000: {
                 const x = ( opcode & 0x0F00 ) >> 8;
                 const nn = ( opcode & 0x00FF );
@@ -277,7 +278,7 @@ class Chip {
             case 0xC000: {
                 const x = ( opcode & 0x0F00 ) >> 8;
                 const nn = ( opcode & 0x00FF );
-                const random = parseInt(Math.random() * 256) & nn;
+                const random = parseInt(Math.random() * 255) & nn;
                 console.log("V[", x, "] has been set to random number:", random);
                 this.V[x] = random;
                 this.pc += 2;
@@ -439,7 +440,7 @@ class Chip {
                         }
                         this.pc += 2;
                         break;
-                    }
+                    }   
                     
                     //FX65
                     //Saves memory at I on registers from V0 to VX 

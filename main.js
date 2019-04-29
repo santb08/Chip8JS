@@ -12,7 +12,7 @@ function loadFile(){
         const arrayBuffer = reader.result;
         const bArray = new Uint8Array(arrayBuffer);
         chip.loadProgram(bArray);
-        setInterval(start, 20);
+        setInterval(start, 1/30);
     }
     reader.readAsArrayBuffer(file);
 }
@@ -95,7 +95,7 @@ const PIXEL_HEIGHT =  canvas.height / 32;
 //Getting context
 const ctx = canvas.getContext('2d');
 //Init chip
-const chip = new Chip();
+let chip = new Chip();
 const keyboard = new Keyboard(chip);
 
 initEmulator()
