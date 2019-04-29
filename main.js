@@ -43,7 +43,7 @@ function redrawCanvas(){
             x: index % 64,
             y: parseInt(index / 64) 
         };
-        drawPixel(coor, ( pixel == 1 ) ? "white" : "black");
+        drawPixel(coor, ( pixel == 1 ) ? "green" : "black");
     })
 
     chip.needsRedraw = false;
