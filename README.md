@@ -22,3 +22,4 @@ Mapped in this emulator as (By now, someday I'll make it editable):
   
   Z | X | C | V
   
+I just wanted to learn how do emulators work, and try to get more familiar to low level. Reading, I got that Chip8 was the "Easiest one" to program. Many tutorials/Guides/DOCS was about C/C++, and even Java. It's still in dev, but it's been what a funny challenge.
