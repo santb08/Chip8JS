@@ -1,6 +1,6 @@
 [Chip8 emulator](https://fxfxrxfx.github.io/Chip8JS)
 
-Emulator of an old chip 8 console, developed with Javascript.
+Emulator of an old chip 8 console, developed with Vanilla Javascript.
 
 Chip8 console has the next keys:
   
@@ -22,4 +22,4 @@ Mapped in this emulator as (By now, someday I'll make it editable):
   
   Z | X | C | V
   
-I just wanted to learn how do emulators work, and try to get more familiar to low level. Reading, I got that Chip8 was the "Easiest one" to program. Many tutorials/Guides/DOCS was about C/C++, and even Java. It's still in dev, but it's been what a funny challenge.
+I just wanted to learn how do emulators work, and try to get more familiar to low level. Reading, I got that Chip8 was the "Easiest one" to program. Many tutorials/Guides/DOCS was about C/C++, But it's been what a funny challenge.
